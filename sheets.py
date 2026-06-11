@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 import gspread
+import json
 from google.oauth2.service_account import Credentials
 
 load_dotenv()
@@ -10,15 +11,22 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
-
 def _get_worksheet():
-    creds = Credentials.from_service_account_file(
-        os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json"),
-        scopes=SCOPES
-    )
+    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+    if creds_json:
+        # Railway: leer desde variable de entorno
+        creds_info = json.loads(creds_json)
+        creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+    else:
+        # Local: leer desde archivo
+        creds = Credentials.from_service_account_file(
+            os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json"),
+            scopes=SCOPES
+        )
     client = gspread.authorize(creds)
     sheet = client.open(os.getenv("SPREADSHEET_NAME", "Ventas_bot"))
     return sheet.worksheet("ventas")
+
 
 def append_venta(producto: str, cliente: str, cantidad: int, precio_unitario: float) -> dict:
     """Agrega una fila nueva a la planilla. Devuelve los datos guardados."""
