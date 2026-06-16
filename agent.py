@@ -28,16 +28,12 @@ _historiales: dict[int, list] = {}
 # Tools disponibles
 TOOLS = [registrar_venta, consultar_stats, listar_clientes,buscar_ventas_cliente]
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
-    google_api_key=os.getenv("GEMINI_API_KEY"),
+from langchain_anthropic import ChatAnthropic
+llm = ChatAnthropic(
+    model="claude-haiku-4-5",
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
     temperature=0
 )
-# llm=ChatGroq(
-#     model="llama-3.3-70b-versatile",
-#     groq_api_key=os.getenv("GROQ_API_KEY"),
-#     temperature=0
-# )
 
 
 # Prompt del agente
@@ -47,7 +43,8 @@ prompt = ChatPromptTemplate.from_messages([
      "Tu única función es ayudar a registrar ventas y consultar estadísticas usando las tools disponibles. "
      "Las ventas tienen: prenda (descripción completa incluyendo modelo, color y talle), cliente (nombre), "
      "monto (precio total) y metodo_pago ('efectivo' o 'transferencia', por defecto 'efectivo'). "
-     "Siempre confirmá la acción realizada de forma clara y concisa." 
+     "Siempre confirmá la acción realizada de forma clara y concisa."
+     "Cuando una tool devuelva una lista o datos, mostrá TODOS los items exactamente como vienen, uno por línea, sin resumir ni omitir ninguno."
      "IMPORTANTE: Cuando una tool devuelva datos, mostrá el resultado COMPLETO y EXACTO tal como lo devuelve la tool, sin resumir, sin parafrasear y sin omitir nada. "
      "No agregues frases como 'acabo de darte' o 'se ha listado' — simplemente mostrá los datos."
      "IMPORTANTE: Siempre ejecutá la tool correspondiente cuando el usuario la pida, incluso si ya la ejecutaste antes. "
@@ -96,7 +93,15 @@ def procesar_mensaje(chat_id: int, texto: str):
             "input": texto,
             "chat_history": historial
         })
-        respuesta = resultado["output"]
+        # Claude Haiku a veces devuelve lista de bloques en vez de string
+        output = resultado["output"]
+        if isinstance(output, list):
+            respuesta = " ".join(
+                bloque.get("text", "") for bloque in output
+                if isinstance(bloque, dict) and bloque.get("type") == "text"
+            )
+        else:
+            respuesta = output
     except Exception as e:
         print(f"Error en el agente: {e}")
         respuesta = MENSAJE_FALLBACK
