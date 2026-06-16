@@ -60,14 +60,16 @@ def append_venta(prenda: str, cliente: str, monto: float, metodo_pago: str = "ef
 
 
 def get_all_ventas() -> list[dict]:
-    """Devuelve todas las ventas como lista de diccionarios."""
     ws = _get_worksheet()
     
-    # Leer encabezados de fila 2 y datos desde fila 3
     headers = [h.lower() for h in ws.row_values(2)]
-    all_rows = ws.get_all_values()[2:]  # desde fila 3 en adelante
+    all_rows = ws.get_all_values()[2:]
     
-    # Filtrar filas vacías
+    # Debug temporal
+    print("Headers encontrados:", headers)
+    print("Cantidad de filas:", len(all_rows))
+    print("Primera fila:", all_rows[0] if all_rows else "VACÍO")
+    
     result = []
     for row in all_rows:
         if any(cell.strip() for cell in row):
