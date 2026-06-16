@@ -40,10 +40,11 @@ def _calcular_total_venta(venta: dict) -> float:
 @tool
 def consultar_stats(periodo: str) -> str:
     """
-    Devuelve el total de dinero recaudado, cantidad de ventas y prenda más vendida para un periodo.
-    Usar cuando el usuario pregunte por totales, montos, dinero recaudado, ingresos o rendimiento.
+    Devuelve el total de dinero recaudado, cantidad de ventas y prenda más vendida para un periodo de tiempo.
+    Usar ÚNICAMENTE cuando el usuario pregunte por montos, totales, dinero o rendimiento en un periodo.
+    NUNCA usar para preguntas sobre clientes o listados.
     El parámetro periodo solo puede ser: 'hoy', 'semana' o 'mes'.
-    Ejemplos: 'dame el total vendido', '¿cuánto recaudé hoy?', 'resumen de la semana', 'cómo me fue este mes'.
+    Ejemplos: '¿cuánto recaudé hoy?', 'resumen de la semana', 'cómo me fue este mes', 'total vendido'.
     """
     hoy = datetime.now().strftime("%Y-%m-%d")
 
@@ -83,9 +84,10 @@ def consultar_stats(periodo: str) -> str:
 @tool
 def listar_clientes() -> str:
     """
-    Lista todos los clientes únicos rankeados por monto total gastado.
-    Usar cuando el usuario pregunte por sus clientes o quiera saber quién le compra más.
-    Ejemplos: '¿quiénes son mis clientes?', 'listado de clientes', '¿quién me compra más?'.
+    Lista todos los clientes únicos rankeados por monto total gastado con cantidad de compras.
+    Usar ÚNICAMENTE cuando el usuario pida ver clientes, listado de clientes o quiera saber quién compra más.
+    NUNCA usar para preguntas sobre montos o estadísticas de ventas.
+    Ejemplos: '¿quiénes son mis clientes?', 'listado de clientes', '¿quién me compra más?', 'dame la lista de clientes'.
     """
     ventas = get_all_ventas()
 
@@ -113,5 +115,26 @@ def listar_clientes() -> str:
             f"{i}. {nombre}\n"
             f"   💰 ${datos['total']:,.0f} | 🧾 {datos['compras']} {plural}"
         )
+
+    return "\n".join(lineas)
+
+@tool
+def buscar_ventas_cliente(cliente: str) -> str:
+    """
+    Muestra todas las compras de un cliente específico con fecha, prenda y monto.
+    Usar cuando el usuario pregunte por las compras de una persona en particular.
+    Ejemplos: 'listame las compras de Julieta Olague', '¿qué le vendí a Vanesa?', 'historial de Josefina'.
+    """
+    ventas = get_ventas_filtradas(cliente=cliente)
+
+    if not ventas:
+        return f"📭 No hay ventas registradas para {cliente.capitalize()}."
+
+    total = sum(_calcular_total_venta(v) for v in ventas)
+    lineas = [f"🛍️ Compras de {cliente.capitalize()} ({len(ventas)} en total | 💰 ${total:,.0f})\n"]
+
+    for v in ventas:
+        monto = _calcular_total_venta(v)
+        lineas.append(f"• {v.get('día', '')} | {v.get('prendas', '')} | ${monto:,.0f}")
 
     return "\n".join(lineas)

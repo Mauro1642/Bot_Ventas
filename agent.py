@@ -5,7 +5,7 @@ from langchain_classic.agents import create_tool_calling_agent
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
-from tools import registrar_venta, consultar_stats, listar_clientes
+from tools import registrar_venta, consultar_stats, listar_clientes, buscar_ventas_cliente
 from telegram import enviar_mensaje
 
 load_dotenv()
@@ -25,7 +25,7 @@ MENSAJE_FALLBACK = (
 _historiales: dict[int, list] = {}
 
 # Tools disponibles
-TOOLS = [registrar_venta, consultar_stats, listar_clientes]
+TOOLS = [registrar_venta, consultar_stats, listar_clientes,buscar_ventas_cliente]
 
 
 llm=ChatGroq(
