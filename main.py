@@ -34,6 +34,13 @@ def main():
                     " Que tengas un lindo dia 😊"
                 )
                 continue
+                # Comando para limpiar historial
+            if texto == "/reset":
+                from agent import _historiales
+                _historiales.pop(chat_id, None)
+                from telegram import enviar_mensaje
+                enviar_mensaje(chat_id, "🔄 Historial limpiado. ¿En qué te puedo ayudar?")
+                continue
             print(f"Mensaje recibido de {chat_id}: {texto}")
             procesar_mensaje(chat_id, texto)
 
