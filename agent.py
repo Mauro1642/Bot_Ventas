@@ -21,18 +21,12 @@ MENSAJE_FALLBACK = (
     "¿Necesitás algo que no está en la lista? Escribile a Mauro y lo agrega 😊"
 )
 
-# Memoria por número de teléfono (en RAM)
+# Memoria por chat_id (en RAM)
 _historiales: dict[int, list] = {}
 
 # Tools disponibles
 TOOLS = [registrar_venta, consultar_stats, listar_clientes]
 
-# # LLM
-# llm = ChatGoogleGenerativeAI(
-#     model="gemini-2.0-flash",
-#     google_api_key=os.getenv("GEMINI_API_KEY"),
-#     temperature=0
-# )
 
 llm=ChatGroq(
     model="llama-3.3-70b-versatile",
@@ -46,8 +40,12 @@ prompt = ChatPromptTemplate.from_messages([
     ("system",
      "Sos un asistente de ventas amigable que habla en español rioplatense (usás 'vos' en lugar de 'tú'). "
      "Tu única función es ayudar a registrar ventas y consultar estadísticas usando las tools disponibles. "
+     "Las ventas tienen: prenda (descripción completa incluyendo modelo, color y talle), cliente (nombre), "
+     "monto (precio total) y metodo_pago ('efectivo' o 'transferencia', consultar en caso de que el metodo de pago no esté especificado). "
      "Siempre confirmá la acción realizada de forma clara y concisa. "
-     "Si el mensaje no corresponde a ninguna tool disponible, decí que no entendiste y listá las opciones."),
+     "Si el mensaje no corresponde a ninguna tool disponible, decí que no entendiste y listá las opciones."
+     "Cuando se te consulte por estadisticas, respondé con dichas estadísticas"),
+     
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad"),

@@ -5,22 +5,31 @@ from sheets import append_venta, get_ventas_filtradas, get_all_ventas
 
 
 @tool
-def registrar_venta(producto: str, cliente: str, cantidad: int, precio_unitario: float) -> str:
+def registrar_venta(prenda: str, cliente: str, monto: float, metodo_pago: str = "efectivo") -> str:
     """
     Registra una nueva venta en la planilla de Google Sheets.
     Usar cuando el usuario mencione que vendió algo.
-    Ejemplos: 'vendí una calza a Josefina por $15000', 'anotar venta de remera a Pedro 8000 pesos'.
-    El precio_unitario es el precio de una sola unidad, no el total.
+    Ejemplos: 'vendí una calza holanda negra L a Josefina por $15000 en efectivo', 'anotar venta de top Milan azul M a Pedro, $8000, transferencia'.
+    El parámetro metodo_pago solo puede ser 'efectivo' o 'transferencia'. Si no se menciona, preguntarle al usuario cual fue el metodo de pago.
     """
-    datos = append_venta(producto, cliente, cantidad, precio_unitario)
-    total = datos["total"]
+    datos = append_venta(prenda, cliente, monto, metodo_pago)
     return (
         f"✅ Venta registrada\n"
-        f"📦 {datos['cantidad']}x {datos['producto'].capitalize()}\n"
+        f"👗 {datos['prenda'].capitalize()}\n"
         f"👤 {datos['cliente'].capitalize()}\n"
-        f"💰 ${total:,.0f}\n"
-        f"📅 {datos['fecha']}"
+        f"💰 ${datos['monto']:,.0f} ({datos['metodo_pago']})\n"
+        f"📅 {datos['dia']}"
     )
+
+
+def _calcular_total_venta(venta: dict) -> float:
+    """Suma transferencia + efectivo para obtener el total de una venta."""
+    transferencia = venta.get("transferencia") or 0
+    efectivo = venta.get("efectivo") or 0
+    try:
+        return float(transferencia) + float(efectivo)
+    except (ValueError, TypeError):
+        return 0
 
 
 @tool
@@ -53,24 +62,24 @@ def consultar_stats(periodo: str) -> str:
     if not ventas:
         return f"📭 No hay ventas registradas para {label}."
 
-    total_recaudado = sum(v["total"] for v in ventas)
+    total_recaudado = sum(_calcular_total_venta(v) for v in ventas)
     cantidad_ventas = len(ventas)
-    productos = [v["producto"].lower() for v in ventas]
-    producto_top = Counter(productos).most_common(1)[0][0]
+    prendas = [v["prendas"].lower() for v in ventas if v.get("prendas")]
+    prenda_top = Counter(prendas).most_common(1)[0][0] if prendas else "N/A"
 
     return (
         f"📊 Resumen de {label}\n"
         f"🧾 Ventas: {cantidad_ventas}\n"
         f"💰 Total: ${total_recaudado:,.0f}\n"
-        f"🏆 Producto más vendido: {producto_top.capitalize()}"
+        f"🏆 Prenda más vendida: {prenda_top.capitalize()}"
     )
 
 
 @tool
 def listar_clientes() -> str:
     """
-    Lista todos los clientes únicos con su cantidad de compras, ordenados de mayor a menor.
-    Usar cuando el usuario pregunte por sus clientes.
+    Lista todos los clientes únicos rankeados por monto total gastado.
+    Usar cuando el usuario pregunte por sus clientes o quiera saber quién le compra más.
     Ejemplos: '¿quiénes son mis clientes?', 'listado de clientes', '¿quién me compra más?'.
     """
     ventas = get_all_ventas()
@@ -78,12 +87,26 @@ def listar_clientes() -> str:
     if not ventas:
         return "📭 No hay ventas registradas todavía."
 
-    conteo = Counter(v["cliente"].capitalize() for v in ventas)
-    clientes_ordenados = conteo.most_common()
+    # Agrupar por cliente
+    clientes: dict[str, dict] = {}
+    for v in ventas:
+        nombre = v.get("nombre", "").capitalize()
+        if not nombre:
+            continue
+        if nombre not in clientes:
+            clientes[nombre] = {"compras": 0, "total": 0}
+        clientes[nombre]["compras"] += 1
+        clientes[nombre]["total"] += _calcular_total_venta(v)
+
+    # Ordenar por monto total
+    clientes_ordenados = sorted(clientes.items(), key=lambda x: x[1]["total"], reverse=True)
 
     lineas = [f"👥 Clientes ({len(clientes_ordenados)} en total)\n"]
-    for cliente, compras in clientes_ordenados:
-        plural = "compra" if compras == 1 else "compras"
-        lineas.append(f"• {cliente}: {compras} {plural}")
+    for i, (nombre, datos) in enumerate(clientes_ordenados, 1):
+        plural = "compra" if datos["compras"] == 1 else "compras"
+        lineas.append(
+            f"{i}. {nombre}\n"
+            f"   💰 ${datos['total']:,.0f} | 🧾 {datos['compras']} {plural}"
+        )
 
     return "\n".join(lineas)
