@@ -64,17 +64,35 @@ def get_all_ventas() -> list[dict]:
     
     headers = [h.lower() for h in ws.row_values(2)]
     all_rows = ws.get_all_values()[2:]
-    
-    # Debug temporal
-    print("Headers encontrados:", headers)
-    print("Cantidad de filas:", len(all_rows))
-    print("Primera fila:", all_rows[0] if all_rows else "VACÍO")
-    
+
+    year = int(os.getenv("SHEET_YEAR", datetime.now().year))
+    month = int(os.getenv("SHEET_MONTH", datetime.now().month))
+
+    meses = {
+        "ene": 1, "feb": 2, "mar": 3, "abr": 4,
+        "may": 5, "jun": 6, "jul": 7, "ago": 8,
+        "sep": 9, "oct": 10, "nov": 11, "dic": 12
+    }
+
+    def parsear_fecha(valor: str) -> str:
+        """Convierte '1-jun' a '2026-06-01'"""
+        try:
+            partes = valor.strip().split("-")
+            dia = int(partes[0])
+            mes = meses.get(partes[1].lower(), month)
+            return f"{year}-{mes:02d}-{dia:02d}"
+        except:
+            return ""
+
     result = []
     for row in all_rows:
         if any(cell.strip() for cell in row):
-            result.append(dict(zip(headers, row)))
-    
+            fila = dict(zip(headers, row))
+            # Convertir la columna día al formato estándar
+            if "día" in fila:
+                fila["día"] = parsear_fecha(fila["día"])
+            result.append(fila)
+
     return result
 
 
