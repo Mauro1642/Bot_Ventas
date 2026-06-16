@@ -24,12 +24,17 @@ def registrar_venta(prenda: str, cliente: str, monto: float, metodo_pago: str = 
 
 def _calcular_total_venta(venta: dict) -> float:
     """Suma transferencia + efectivo para obtener el total de una venta."""
-    transferencia = venta.get("transferencia") or 0
-    efectivo = venta.get("efectivo") or 0
-    try:
-        return float(transferencia) + float(efectivo)
-    except (ValueError, TypeError):
-        return 0
+    def limpiar_monto(valor) -> float:
+        if not valor:
+            return 0
+        try:
+            # Eliminar $, puntos de miles y reemplazar coma decimal por punto
+            limpio = str(valor).replace("$", "").replace(".", "").replace(",", ".").strip()
+            return float(limpio) if limpio else 0
+        except (ValueError, TypeError):
+            return 0
+
+    return limpiar_monto(venta.get("transferencia")) + limpiar_monto(venta.get("efectivo"))
 
 
 @tool
