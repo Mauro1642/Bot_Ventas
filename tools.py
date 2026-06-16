@@ -35,10 +35,10 @@ def _calcular_total_venta(venta: dict) -> float:
 @tool
 def consultar_stats(periodo: str) -> str:
     """
-    Devuelve estadísticas de ventas para un periodo determinado.
-    Usar cuando el usuario pregunte por sus ventas, ingresos o rendimiento.
+    Devuelve el total de dinero recaudado, cantidad de ventas y prenda más vendida para un periodo.
+    Usar cuando el usuario pregunte por totales, montos, dinero recaudado, ingresos o rendimiento.
     El parámetro periodo solo puede ser: 'hoy', 'semana' o 'mes'.
-    Ejemplos: '¿cuánto vendí hoy?', 'resumen de la semana', 'cómo me fue este mes'.
+    Ejemplos: 'dame el total vendido', '¿cuánto recaudé hoy?', 'resumen de la semana', 'cómo me fue este mes'.
     """
     hoy = datetime.now().strftime("%Y-%m-%d")
 
