@@ -60,15 +60,20 @@ def append_venta(prenda: str, cliente: str, monto: float, metodo_pago: str = "ef
 
 
 def get_all_ventas() -> list[dict]:
-    """
-    Devuelve todas las ventas como lista de diccionarios.
-    Usa fila 2 como encabezado porque fila 1 es el título.
-    """
+    """Devuelve todas las ventas como lista de diccionarios."""
     ws = _get_worksheet()
-    rows = ws.get_all_records(head=2)  # fila 2 como encabezado
     
-    # Normalizar keys a minúsculas
-    return [{k.lower(): v for k, v in row.items()} for row in rows]
+    # Leer encabezados de fila 2 y datos desde fila 3
+    headers = [h.lower() for h in ws.row_values(2)]
+    all_rows = ws.get_all_values()[2:]  # desde fila 3 en adelante
+    
+    # Filtrar filas vacías
+    result = []
+    for row in all_rows:
+        if any(cell.strip() for cell in row):
+            result.append(dict(zip(headers, row)))
+    
+    return result
 
 
 def get_ventas_filtradas(desde: str = None, hasta: str = None, cliente: str = None) -> list[dict]:
