@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from langchain_classic.agents import AgentExecutor
 from langchain_classic.agents import create_tool_calling_agent
 from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 from tools import registrar_venta, consultar_stats, listar_clientes, buscar_ventas_cliente
@@ -27,12 +28,16 @@ _historiales: dict[int, list] = {}
 # Tools disponibles
 TOOLS = [registrar_venta, consultar_stats, listar_clientes,buscar_ventas_cliente]
 
-
-llm=ChatGroq(
-    model="llama-3.3-70b-versatile",
-    groq_api_key=os.getenv("GROQ_API_KEY"),
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    google_api_key=os.getenv("GEMINI_API_KEY"),
     temperature=0
 )
+# llm=ChatGroq(
+#     model="llama-3.3-70b-versatile",
+#     groq_api_key=os.getenv("GROQ_API_KEY"),
+#     temperature=0
+# )
 
 
 # Prompt del agente
